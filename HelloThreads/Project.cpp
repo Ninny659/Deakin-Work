@@ -2,14 +2,14 @@
 #include <cstdlib>
 #include <time.h>
 #include <chrono>
+#include <pthread.h>
 
 using namespace std::chrono;
 using namespace std;
 
-// Constant variables that we don't change during run time.
-#define NUM_THREAD 5
-
-const int vectorSize = 100000000;
+// const variables we don't want to change in run time
+const int NUM_THREAD = 4;
+const long int vectorSize = 1000000;
 
 struct RndVectorRefrence
 {
@@ -49,7 +49,7 @@ void *adding_vector(void *args)
     return 0;
 }
 
-int main()
+int HelloThreads()
 {
     pthread_t random_threads[NUM_THREAD];
     pthread_t add_threads[NUM_THREAD];
@@ -97,7 +97,6 @@ int main()
 
     for (size_t i = 0; i < NUM_THREAD; i++)
     {
-
         // Awaiting all of the threads to finish their assigned function and rejoin the thead pool.
         pthread_join(random_threads[i], NULL);
     }
@@ -137,5 +136,11 @@ int main()
     cout << "Time taken by function: "
          << duration.count() << " microseconds" << endl;
 
+    return 0;
+}
+
+int main()
+{
+    HelloThreads();
     return 0;
 }
