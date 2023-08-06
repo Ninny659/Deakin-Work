@@ -11,7 +11,7 @@ using namespace std;
 const int N = 10000;
 
 // Number of threads being used
-const int NUM_THREAD = 6;
+const int NUM_THREAD = 10;
 
 // Min and Max for array rands
 const int minRnd = 5;
@@ -141,10 +141,10 @@ void *fastication(void *args)
     // Perform multiplication in the assigned chunk of rows
     for (int i = fast_task->startRow; i <= fast_task->endRow; i++)
     {
-        for (int j = 0; j < N; j++)
+        for (int j = fast_task->startRow; j < fast_task->endRow; j++)
         {
             fast_task->m3[i][j] = 0;
-            for (int k = 0; k < N; k++)
+            for (int k = fast_task->startRow; k < fast_task->endRow; k++)
             {
                 fast_task->m3[i][j] += fast_task->m1[i][k] * fast_task->m2[k][j];
             }
@@ -190,7 +190,7 @@ void fasticationHelper()
 
 int main()
 {
-    slowticationHelper();
+    //slowticationHelper();
 
     fasticationHelper();
 
