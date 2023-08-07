@@ -4,11 +4,12 @@
 #include <functional>
 #include <chrono>
 #include <pthread.h>
+#include <omp.h>
 
 using namespace std;
 
 // Matrix size -> anything past 100,000 is about 13gb of memory usage
-const int N = 10000;
+static int N = 1;
 
 // Number of threads being used
 const int NUM_THREAD = 30;
@@ -26,11 +27,11 @@ struct MatrixArgs
 // Super inefficent. Caused issues
 // int rndNumber()
 // {
-//     std::random_device rnd; 
-//     std::mt19937 numGen(rnd()); 
-//     std::uniform_int_distribution<int> distribution(minRnd, maxRnd); 
+//     std::random_device rnd;
+//     std::mt19937 numGen(rnd());
+//     std::uniform_int_distribution<int> distribution(minRnd, maxRnd);
 //
-//     return distribution(numGen); 
+//     return distribution(numGen);
 // }
 
 // A function to generate and fill matrixs' with random values. If true then the resulting matrix will be filled with 0's.
@@ -51,9 +52,11 @@ int **matrixGenerator(bool resultMatrix)
     {
         for (j = 0; j < N; j++)
         {
-            if (resultMatrix != true) matrix[i][j] = rand() % 100;
+            if (resultMatrix != true)
+                matrix[i][j] = rand() % 100;
             // If it is a result matrix, then 0 is inserted instead of rand()
-            else matrix[i][j] = 0;
+            else
+                matrix[i][j] = 0;
         }
     }
 
@@ -72,12 +75,12 @@ double timerFunction(std::function<void(void)> timedFunc)
 
     std::chrono::duration<double> elapsed = end - start;
 
-    // Calculate the time taken from the start of the clock to the end and return to helper functions. 
+    // Calculate the time taken from the start of the clock to the end and return to helper functions.
     return elapsed.count();
 }
 
 // Free allocated memory from passed refrences.
-void freeMemory(int** matrix1, int** matrix2, int** matrix_result)
+void freeMemory(int **matrix1, int **matrix2, int **matrix_result)
 {
     for (int i = 0; i < N; i++)
     {
@@ -98,7 +101,7 @@ void *slowtication(void *args)
     /*
     Creating a refrence to the struct that holds all the values needed for matrix multiplication.
     MatrixArgs is a shared resources for all of the matrix multiplication instances to reduce code complexity.
-    */ 
+    */
     struct MatrixArgs *slow_task = (struct MatrixArgs *)args;
 
     // Normal matrix multiplication where the tasks is defined from the starting element [0][0] to the end [N][N]
@@ -120,7 +123,7 @@ void *slowtication(void *args)
 }
 
 // Defining helper function to reduce code in the main() func
-void slowticationHelper()
+double slowticationHelper()
 {
     // Declaring matrixs' to be generated with random values
     int **matrix1 = matrixGenerator(false);
@@ -130,7 +133,8 @@ void slowticationHelper()
     int **slow_result = matrixGenerator(true);
 
     // Declaring a double timer result (Seconds) to print later
-    double executionTime_slowtication = timerFunction([&]() {
+    double executionTime_slowtication = timerFunction([&]()
+    {
         struct MatrixArgs slow_task;
         // Assining all of our values to the struct to be passed by refrence
         slow_task.m1 = matrix1;
@@ -138,14 +142,15 @@ void slowticationHelper()
         slow_task.m3 = slow_result;
         slow_task.startRow = 0;
         slow_task.endRow = N - 1;
-        slowtication((void *)&slow_task); 
-    });
+        slowtication((void *)&slow_task); });
 
     // Printing the time taken to execute the function
-    std::cout << "Execution Time (Slowtication): " << executionTime_slowtication << " seconds" << std::endl;
+    //std::cout << "Execution Time (Slowtication): " << executionTime_slowtication << " seconds" << std::endl;
 
-    // Freeing used memory to be utalised again. 
+    // Freeing used memory to be utalised again.
     freeMemory(matrix1, matrix2, slow_result);
+
+    return executionTime_slowtication;
 }
 
 void *fastication(void *args)
@@ -155,9 +160,9 @@ void *fastication(void *args)
     /*
     Perform multiplication in the assigned chunk of rows and columns.
     Instead of running through every element the threds divide the matrix into smaller sub-matrixs',
-    to compute the mult faster and more efficent. 
+    to compute the mult faster and more efficent.
     This substantially cut's down on the time taken but increases the overhead of calculation.
-    */ 
+    */
 
     for (int i = fast_task->startRow; i <= fast_task->endRow; i++)
     {
@@ -174,7 +179,7 @@ void *fastication(void *args)
     return NULL;
 }
 
-void fasticationHelper()
+double fasticationHelper()
 {
 
     // Declaring matrixs' to be generated with random values
@@ -184,7 +189,8 @@ void fasticationHelper()
     // Declaring matrixs' to be generated with 0's as it's values
     int **fast_result = matrixGenerator(true);
 
-    double executionTime_fastification = timerFunction([&]() {
+    double executionTime_fastification = timerFunction([&]()
+    {
 
         // Defining and creating threads based off of the const NUM_THREAD and chunking the matrix size [N] by the number of threads
         pthread_t fast_threads[NUM_THREAD];
@@ -206,22 +212,96 @@ void fasticationHelper()
         // Awaiting threads to rejoin the pool of avaliable threads.
         for (size_t i = 0; i < NUM_THREAD; i++) {
             pthread_join(fast_threads[i], NULL);
-        } 
-    });
-    
-    // Printing the time taken to execute the function
-    std::cout << "Execution Time (Fastification): " << executionTime_fastification << " seconds" << std::endl;
+        } });
 
-    // Freeing used memory to be utalised again. 
+    // Printing the time taken to execute the function
+    //std::cout << "Execution Time (Fastification): " << executionTime_fastification << " seconds" << std::endl;
+
+    // Freeing used memory to be utalised again.
     freeMemory(matrix1, matrix2, fast_result);
+
+    return executionTime_fastification;
+}
+
+void *blazingtication(void *args)
+{
+
+    struct MatrixArgs *blazing_task = (struct MatrixArgs *)args;
+
+// No need to set up parallism here, the libary will dynamically handle the task aswell as thread assignment.
+#pragma omp parallel for reduction(+: res)
+    for (int i = blazing_task->startRow; i <= blazing_task->endRow; i++) {
+        for (int j = 0; j < N; j++) {
+            for (int k = 0; k < N; k++) {
+                // Assiging it to a int to so OMP knows what it needs to optimise for. 
+                int res = blazing_task->m1[i][k] * blazing_task->m2[k][j];
+                blazing_task->m3[i][j] = res;
+            }
+        }
+    }
+
+    // return NULL as all of our values are save to the struct refrence.
+    return NULL;
+}
+
+double blazingticationHelper()
+{
+    // Declaring matrixs' to be generated with random values
+    int **matrix1 = matrixGenerator(false);
+    int **matrix2 = matrixGenerator(false);
+
+    // Declaring matrixs' to be generated with 0's as it's values
+    int **blazing_result = matrixGenerator(true);
+
+    // Declaring a double timer result (Seconds) to print later
+    double executionTime_blazingtication = timerFunction([&]()
+    {
+        struct MatrixArgs blazing_task;
+        // Assining all of our values to the struct to be passed by refrence
+        blazing_task.m1 = matrix1;
+        blazing_task.m2 = matrix2;
+        blazing_task.m3 = blazing_result;
+        blazing_task.startRow = 0;
+        blazing_task.endRow = N - 1;
+        blazingtication((void *)&blazing_task); });
+
+    // Printing the time taken to execute the function
+    //std::cout << "Execution Time (Blazingtication): " << executionTime_blazingtication << " seconds" << std::endl;
+
+    // Freeing used memory to be utalised again.
+    freeMemory(matrix1, matrix2, blazing_result);
+
+    return executionTime_blazingtication;
 }
 
 int main()
 {
-    // Helper functions to retain cleanliness in the main function. Can expand to further testing and benchmarks from here. 
-    //slowticationHelper();
+    // Helper functions to retain cleanliness in the main function. Can expand to further testing and benchmarks from here.
+    const int RUN_TIME = 4;
+    double slowMean, fastMean, blazeMean = 0;
 
-    fasticationHelper();
+    for(int i = 0; i < 5; i++)
+    {
+        for(int j = 0; j < RUN_TIME; j++){
+            slowMean += slowticationHelper();
+            fastMean += fasticationHelper();
+            blazeMean += blazingticationHelper();
+        }
+
+        slowMean /= RUN_TIME;
+        fastMean /= RUN_TIME;
+        blazeMean /= RUN_TIME;
+
+        std::cout << "--------------------------------------------------------------\n"
+        "Execution Time for " << N << " elements (Slowtication): " << slowMean << " seconds (Mean) \n" 
+        "Execution Time for " << N << " elements (Fastication): " << fastMean << " seconds (Mean) \n" 
+        "Execution Time for " << N << " elements (Blazingtication): " << blazeMean << " seconds (Mean) \n" 
+        
+        
+        << std::endl;
+        N *=  10;
+    }
+
 
     return 0;
 }
