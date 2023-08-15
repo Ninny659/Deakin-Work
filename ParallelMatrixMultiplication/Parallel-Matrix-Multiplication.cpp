@@ -263,7 +263,8 @@ double blazingticationHelper()
         blazing_task.m3 = blazing_result;
         blazing_task.startRow = 0;
         blazing_task.endRow = N - 1;
-        blazingtication((void *)&blazing_task); });
+        blazingtication((void *)&blazing_task); 
+    });
 
     // Printing the time taken to execute the function
     //std::cout << "Execution Time (Blazingtication): " << executionTime_blazingtication << " seconds" << std::endl;

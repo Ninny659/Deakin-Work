@@ -8,8 +8,8 @@ using namespace std::chrono;
 using namespace std;
 
 // const variables we don't want to change in run time
-const int NUM_THREAD = 4;
-const long int vectorSize = 1000000;
+const int NUM_THREAD = 6;
+const long int vectorSize = 1000000000;
 
 struct RndVectorRefrence
 {
