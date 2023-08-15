@@ -7,7 +7,7 @@
 
 using namespace std;
 
-static int N = 5;
+static int N = 1;
 const int NUM_THREAD = 10;
 
 struct ArrayArgs
@@ -116,7 +116,7 @@ int main()
     const int RUN_TIME = 4;
     double fastortMean = 0;
 
-    for (int i = 0; i <= 5; i++)
+    for (int i = 0; i <= 4; i++)
     {
         for (int j = 0; j < RUN_TIME; j++)
         {
