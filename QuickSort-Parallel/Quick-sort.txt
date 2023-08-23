@@ -1,0 +1,1 @@
+All implementations (Parallel and Sequential) are in the one file.

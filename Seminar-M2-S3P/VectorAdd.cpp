@@ -9,7 +9,7 @@ using namespace std;
 
 // const variables we don't want to change in run time
 const int NUM_THREAD = 6;
-static int N = 2;
+static int N = 10;
 
 struct RndVectorRefrence
 {
@@ -38,6 +38,8 @@ double ompVectorAddition()
     // Starting our timer and setting it to the timer_start variable.
     auto start = high_resolution_clock::now();
 
+    // Adding vector1 to vector2 to the result of vector3
+#pragma omp parallel default(none) shared(N, v3) private(v1, v2) reduction(+:totalV3)
     // Setting up a vector of N - int N
     v1 = (int *)malloc(N * sizeof(int *));
     v2 = (int *)malloc(N * sizeof(int *));
@@ -46,17 +48,23 @@ double ompVectorAddition()
     randomOMPVector(v1, N);
     randomOMPVector(v2, N);
 
-    int totalV3 = 0;
+    int totalV3, total = 0;
 
-    // Adding vector1 to vector2 to the result of vector3
-    #pragma omp parallel default(none) shared(N, v3) private(v1, v2) reduction(+:totalV3)
-    #pragma omp for schedule(static, chunk)
+    #pragma omp for schedule(guided, 8)
     for (int i = 0; i < N; i++)
     {
         v3[i] = v1[i] + v2[i];
-        
-        #pragma omp atomic update
-        totalV3 += v3[i];
+    }
+
+    #pragma omp for 
+    for (int i = 0; i < N; i++) 
+    { 
+        totalV3 += v3[i]; 
+    } 
+
+    #pragma omp critical 
+    {
+        total += totalV3;
     }
 
 #pragma omp critical
@@ -251,7 +259,7 @@ int main()
         std::cout << "--------------------------------------------------------------\n"
         "Execution Time for " << N << " elements (SequentialAddition): " << seqMean << " seconds (Mean) \n" 
         "Execution Time for " << N << " elements (pThreadVectorAddition): " << pthreadMean << " seconds (Mean) \n" 
-        "Execution Time for " << N << " elements (OMPVectorAddition): " << ompMean << " seconds (Mean) \n" 
+        "Execution Time for " << N << " elements (Guided Schedule) (OMPVectorAddition): " << ompMean << " seconds (Mean) \n" 
         
         
         << std::endl;
