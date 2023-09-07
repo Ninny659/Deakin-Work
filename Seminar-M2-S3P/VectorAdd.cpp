@@ -50,7 +50,7 @@ double ompVectorAddition()
 
     int totalV3, total = 0;
 
-    #pragma omp for schedule(guided, 8)
+    #pragma omp for schedule(guided, N)
     for (int i = 0; i < N; i++)
     {
         v3[i] = v1[i] + v2[i];

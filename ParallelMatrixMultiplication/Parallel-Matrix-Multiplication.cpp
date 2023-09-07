@@ -5,7 +5,7 @@
 #include <chrono>
 #include <pthread.h>
 #include <omp.h>
-#include <CL/cl.h> 
+#include <opencl.hpp> 
 #include <fstream>
 
 using namespace std;
@@ -297,52 +297,7 @@ double matrixMultiplicationOpenCLHelper()
 
     double executionTime_multiplication = timerFunction([&]()
     {
-        cl_platform_id platform;
-        clGetPlatformIDs(1, &platform, NULL);
 
-        cl_device_id device;
-        clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
-
-        cl_context context = clCreateContext(NULL, 1, &device, NULL, NULL, NULL);
-
-        // Load and compile kernel source
-        const std::string kernelSource = matrixMultiplicationKernelSourceReader("matrix_multiplication.cl");
-        const char *kernelSourceCStr = kernelSource.c_str();
-
-        cl_program program = clCreateProgramWithSource(context, 1, &kernelSourceCStr, NULL, NULL);
-        clBuildProgram(program, 1, &device, NULL, NULL, NULL);
-
-        // Create OpenCL command queue and kernel
-        cl_command_queue queue = clCreateCommandQueue(context, device, 0, NULL);
-        cl_kernel kernel = clCreateKernel(program, "matrixMultiplicationKernel", NULL);
-
-
-        // Create OpenCL buffers and transfer data
-        cl_mem d_matrix1 = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int) * N * N, matrix1, NULL);
-        cl_mem d_matrix2 = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int) * N * N, matrix2, NULL);
-        cl_mem d_result = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int) * N * N, NULL, NULL);
-
-        // Set kernel arguments
-        clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_matrix1);
-        clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_matrix2);
-        clSetKernelArg(kernel, 2, sizeof(cl_mem), &d_result);
-        clSetKernelArg(kernel, 3, sizeof(int), &N);
-        clSetKernelArg(kernel, 4, sizeof(int), &N);
-
-        // Wait for kernel execution to finish
-        clFinish(queue);
-
-        // Retrieve results from the remote machine
-        clEnqueueReadBuffer(queue, d_result, CL_TRUE, 0, sizeof(int) * N * N, multiplication_result, 0, NULL, NULL);
-
-        // Clean up resources
-        clReleaseMemObject(d_matrix1);
-        clReleaseMemObject(d_matrix2);
-        clReleaseMemObject(d_result);
-        clReleaseKernel(kernel);
-        clReleaseProgram(program);
-        clReleaseCommandQueue(queue);
-        clReleaseContext(context);
 
     });   
 
