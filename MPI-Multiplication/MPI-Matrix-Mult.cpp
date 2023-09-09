@@ -205,5 +205,7 @@ int main(int argc, char **argv)
                  "Execution Time for "
               << N << " elements (MPItication): " << mpiTimed << " milliseconds \n";
 
+    // wait for key press
+    cin.get();
     return 0;
 }
