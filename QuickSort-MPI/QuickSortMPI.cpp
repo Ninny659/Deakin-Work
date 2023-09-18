@@ -1,14 +1,14 @@
-#include <mpi.h>
 #include <iostream>
 #include <random>
 #include <utility>
 #include <functional>
 #include <chrono>
 #include <iostream>
+#include <mpi.h>
 
 using namespace std;
 
-const int N = 1000000;
+const int N = 10000;
 
 // Function to swap two elements
 void swap(int* arr, int i, int j)
@@ -128,6 +128,14 @@ void fastort(int* unsortedArray,int argc, char* argv[])
     if (N >= localSize * (rank + 1)) localChunkSize = localSize;
     else localChunkSize = N - localSize * rank;
 
+    // Debug print
+    // cout << "\nRank " << rank << " has chunk: ";
+    // for(int i = 0; i < localSize; i++)
+    // {
+    //     cout << localChunk[i] << " ";
+    // }
+    // std::cout << "\nLength of localChunk: " << localChunkSize << std::endl;
+
     // Sort the local chunk on each process
     MPIsort(localChunk, 0, localChunkSize);
 
@@ -160,6 +168,13 @@ void fastort(int* unsortedArray,int argc, char* argv[])
             // Increase the size of localChunk by receivedChunkSize
             localChunkSize += receivedChunkSize;
 
+            // Debug print
+            // cout << "Rank " << rank << " received chunk from rank " << rank + i << endl;
+            // for(int i = 0; i < receivedChunkSize; i++)
+            // {
+            //     cout << receivedChunk[i] << " ";
+            // }
+
             // Free the receivedChunk array
             free(receivedChunk);
         }
@@ -171,6 +186,10 @@ void fastort(int* unsortedArray,int argc, char* argv[])
     if (rank == 0)
     {
         checkSortedArray(localChunk);
+        // for(int i = 0; i < N; i++)
+        // {
+        //     cout << localChunk[i] << " ";
+        // }
     }
 
     free(localChunk);
@@ -197,6 +216,6 @@ int main()
     double executionTime_fastification = 0;
     executionTime_fastification = fastortHelper();
 
-    std::cout << "Execution Time for " << N << " elements (Fastort): " << executionTime_fastification << " microseconds (Mean) \n" << std::endl;
+    std::cout << "\nExecution Time for " << N << " elements (Fastort): " << executionTime_fastification << " microseconds \n" << std::endl;
     return 0;
 }

@@ -35,13 +35,13 @@ int main(int argc, char **argv)
 
     init(v1, SZ);
     init(v2, SZ);
-    v3 = (int *)malloc(sizeof(int) * SZ * SZ);
+    v3 = (int *)malloc(sizeof(int) * SZ);
 
     size_t global[] = {(size_t)SZ, (size_t)SZ};
 
     // initial vector
-    print(v1, SZ * SZ);
-    print(v2, SZ * SZ);
+    print(v1, SZ);
+    print(v2, SZ);
 
     setup_openCL_device_context_queue_kernel((char *)"./vector_add.cl", (char *)"square_product");
 
@@ -51,10 +51,10 @@ int main(int argc, char **argv)
     clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, &event);
     clWaitForEvents(1, &event);
 
-    clEnqueueReadBuffer(queue, bufV3, CL_TRUE, 0, SZ * SZ * sizeof(int), &v3[0], 0, NULL, NULL);
+    clEnqueueReadBuffer(queue, bufV3, CL_TRUE, 0, SZ * sizeof(int), &v3[0], 0, NULL, NULL);
 
     // result vector
-    print(v3, SZ * SZ);
+    print(v3, SZ);
 
     free_memory();
 }
@@ -133,13 +133,13 @@ void copy_kernel_args()
 
 void setup_kernel_memory()
 {
-    bufV1 = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * SZ * sizeof(int), NULL, NULL);
-    bufV2 = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * SZ * sizeof(int), NULL, NULL);
-    bufV3 = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * SZ * sizeof(int), NULL, NULL);
+    bufV1 = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * sizeof(int), NULL, NULL);
+    bufV2 = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * sizeof(int), NULL, NULL);
+    bufV3 = clCreateBuffer(context, CL_MEM_READ_WRITE, SZ * sizeof(int), NULL, NULL);
 
-    clEnqueueWriteBuffer(queue, bufV1, CL_TRUE, 0, SZ * SZ * sizeof(int), &v1[0], 0, NULL, NULL);
-    clEnqueueWriteBuffer(queue, bufV2, CL_TRUE, 0, SZ * SZ * sizeof(int), &v2[0], 0, NULL, NULL);
-    clEnqueueWriteBuffer(queue, bufV3, CL_TRUE, 0, SZ * SZ * sizeof(int), &v3[0], 0, NULL, NULL);
+    clEnqueueWriteBuffer(queue, bufV1, CL_TRUE, 0, SZ * sizeof(int), &v1[0], 0, NULL, NULL);
+    clEnqueueWriteBuffer(queue, bufV2, CL_TRUE, 0, SZ * sizeof(int), &v2[0], 0, NULL, NULL);
+    clEnqueueWriteBuffer(queue, bufV3, CL_TRUE, 0, SZ * sizeof(int), &v3[0], 0, NULL, NULL);
 }
 
 void setup_openCL_device_context_queue_kernel(char *filename, char *kernelname)
