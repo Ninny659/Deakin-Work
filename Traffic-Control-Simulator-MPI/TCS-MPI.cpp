@@ -31,6 +31,9 @@ const int CONGESTED_SIGNAL_COUNT = 2;
 // Our tag for the MPI_Send and MPI_Recv
 const int TAG = 0;
 
+// Starting hour
+const int STARTING_HOUR = 10;
+
 // Our traffic struct to store the traffic infomation in.
 struct TrafficData
 {
@@ -80,7 +83,7 @@ int main(int argc, char *argv[])
     auto currentTime = std::time(nullptr);
     auto localTime = *std::localtime(&currentTime);
     char timeStamp[11];
-    int hoursPassed = 10;
+    int hoursPassed = STARTING_HOUR;
     int minutesPassed = 0;
 
     
@@ -146,11 +149,14 @@ int main(int argc, char *argv[])
             {
                 std::cout << "Signal " << signalCongestionPairs[i].first << " - Congestion: " << signalCongestionPairs[i].second << " cars" << std::endl;
             }
+
+            // Reset the congestion count for all signals
+            std::fill(congestionCount.begin(), congestionCount.end(), 0);
         }
 
         MPI_Barrier(MPI_COMM_WORLD);
-        // sleep(MEASUREMENT_INTERVAL_MINUTES);
-        sleep(1);
+        sleep(MEASUREMENT_INTERVAL_MINUTES);
+        // sleep(1);
 
         minutesPassed += MEASUREMENT_INTERVAL_MINUTES;
         if (minutesPassed >= 60)
