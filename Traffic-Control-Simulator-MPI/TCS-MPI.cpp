@@ -92,11 +92,6 @@ int main(int argc, char *argv[])
         if (world_rank == 0)
         {
             srand(time(nullptr));
-            if (minutesPassed >= 60)
-            {
-                hoursPassed++;
-                minutesPassed = 0;
-            }
 
             std::strftime(timeStamp, sizeof(timeStamp), "%d-%m-%Y", &localTime);
 
@@ -116,7 +111,6 @@ int main(int argc, char *argv[])
 
             // Remove the traffic data from the buffer
             buffer.pop();
-            minutesPassed += MEASUREMENT_INTERVAL_MINUTES;
         }
         // Traffic consumer
         else
@@ -127,36 +121,42 @@ int main(int argc, char *argv[])
             // Update the congestion count for the respective signal
             congestionCount[trafficData.signalId] += trafficData.carsPassed;
         }
-
-        MPI_Barrier(MPI_COMM_WORLD);
-        sleep(MEASUREMENT_INTERVAL_MINUTES);
-        // sleep(1);
-    }
-
-    // Congested traffic signals
-    if (world_rank == 0)
-    {
-        // Declare a vector to store signal-congestion pairs
-        std::vector<std::pair<int, int>> signalCongestionPairs;
-
-        // Populate the vector with signal indices and their corresponding congestion counts
-        for (int i = 0; i < NUM_SIGNALS; ++i)
+    
+        if (minutesPassed >= 55 && world_rank == 1)
         {
-            signalCongestionPairs.emplace_back(i, congestionCount[i]);
+            // Declare a vector to store signal-congestion pairs
+            std::vector<std::pair<int, int>> signalCongestionPairs;
+
+            // Populate the vector with signal indices and their corresponding congestion counts
+            for (int i = 0; i < NUM_SIGNALS; ++i)
+            {
+                signalCongestionPairs.emplace_back(i, congestionCount[i]);
+            }
+
+            // Partially sort the vector to get top congested signals based on congestion counts
+            std::partial_sort(signalCongestionPairs.begin(), signalCongestionPairs.begin() + CONGESTED_SIGNAL_COUNT, signalCongestionPairs.end(),
+                              [](const std::pair<int, int> &a, const std::pair<int, int> &b)
+                              {
+                                  return a.second > b.second;
+                              });
+
+            // Print the top congested traffic signals and their congestion counts
+            std::cout << "Top " << CONGESTED_SIGNAL_COUNT << " congested traffic signals:" << std::endl;
+            for (int i = 0; i < CONGESTED_SIGNAL_COUNT; ++i)
+            {
+                std::cout << "Signal " << signalCongestionPairs[i].first << " - Congestion: " << signalCongestionPairs[i].second << " cars" << std::endl;
+            }
         }
 
-        // Partially sort the vector to get top congested signals based on congestion counts
-        std::partial_sort(signalCongestionPairs.begin(), signalCongestionPairs.begin() + CONGESTED_SIGNAL_COUNT, signalCongestionPairs.end(),
-                          [](const std::pair<int, int> &a, const std::pair<int, int> &b)
-                          {
-                              return a.second > b.second;
-                          });
+        MPI_Barrier(MPI_COMM_WORLD);
+        // sleep(MEASUREMENT_INTERVAL_MINUTES);
+        sleep(1);
 
-        // Print the top congested traffic signals and their congestion counts
-        std::cout << "Top " << CONGESTED_SIGNAL_COUNT << " congested traffic signals:" << std::endl;
-        for (int i = 0; i < CONGESTED_SIGNAL_COUNT; ++i)
+        minutesPassed += MEASUREMENT_INTERVAL_MINUTES;
+        if (minutesPassed >= 60)
         {
-            std::cout << "Signal " << signalCongestionPairs[i].first << " - Congestion: " << signalCongestionPairs[i].second << " cars" << std::endl;
+            hoursPassed++;
+            minutesPassed = 0;
         }
     }
 
