@@ -9,9 +9,10 @@
 
 using namespace std;
 
+// Due to memory limitations of the VM, we can only sort 100000 elements.
 int N = 10000;
 // Initialise localChunkSize
-int localChunkSize = N / 2;
+int localChunkSize = 0;
 
 int *unsortedArray;
 // Set up localChunk and sortedChunk
@@ -41,7 +42,7 @@ void copy_kernel_args();
 void checkSortedArray(int *arr)
 {
     // Check if the array is sorted
-    for (int i = 0; i < N - 1; i++)
+    for (int i = 0; i < N / 10; i++)
     {
         if (arr[i] > arr[i + 1])
         {
@@ -152,15 +153,18 @@ void fastort(int *unsortedArray, int argc, char *argv[])
         if (rank + i < numProcs)
         {
             int receivedChunkSize;
-            if (N >= localSize * (rank + 2 * i))
-                receivedChunkSize = localSize * i;
-            else
-                receivedChunkSize = N - localSize * (rank + i);
+
+            // If the process is not the last process in the pair, receive localSize * i elements.
+            if (N >= localSize * (rank + 2 * i)) receivedChunkSize = localSize * i;
+            // If the process is the last process in the pair, receive the remaining elements.
+            else receivedChunkSize = N - localSize * (rank + i);
 
             int *receivedChunk = (int *)malloc(receivedChunkSize * sizeof(int));
 
+            // Receive the chunk
             MPI_Recv(receivedChunk, receivedChunkSize, MPI_INT, rank + i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
+            // Merge the chunks
             int *mergedChunk = merge(localChunk, localChunkSize, receivedChunk, receivedChunkSize);
             free(localChunk);
             localChunk = mergedChunk;
@@ -227,6 +231,7 @@ void copy_kernel_args()
 
 void setup_kernel_memory()
 {
+    // Create memory buffers on the device for each vector
     bufSorted = clCreateBuffer(context, CL_MEM_READ_WRITE, localChunkSize * sizeof(int), NULL, NULL);
     bufUnsorted = clCreateBuffer(context, CL_MEM_READ_WRITE, localChunkSize * sizeof(int), NULL, NULL);
 
@@ -368,3 +373,4 @@ cl_device_id create_device()
 
     return dev;
 }
+

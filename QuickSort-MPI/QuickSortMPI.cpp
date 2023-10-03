@@ -8,7 +8,7 @@
 
 using namespace std;
 
-const int N = 10000;
+const int N = 100000;
 
 // Function to swap two elements
 void swap(int* arr, int i, int j)

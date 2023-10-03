@@ -4,6 +4,8 @@
 # ignore compiled files
 *.exe
 *.o
+*.pdf
+*.docx
 
 # ignore local include wrapper
 wrapper

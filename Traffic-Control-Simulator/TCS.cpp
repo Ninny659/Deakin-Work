@@ -124,6 +124,8 @@ void trafficConsumer()
     // Created an array to assign the congested lane ids and cars passed
     std::vector<int> congestionCount(NUM_SIGNALS, 0);
 
+    cout << "Consumer thread started" << endl;
+
     for (int i = 0; i < NUM_MEASUREMENTS_PER_HOUR; ++i)
     {
         std::unique_lock<std::mutex> lock(mutexLock);
